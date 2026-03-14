@@ -152,7 +152,7 @@ export default function HeroSlider() {
       </div>
 
       {/* Navigation arrows */}
-      <div className="absolute bottom-1/2 translate-y-1/2 left-4 lg:left-8 z-30">
+      <div className="absolute bottom-1/2 translate-y-1/2 left-4 lg:left-8 z-30 hidden md:block">
         <button
           onClick={prev}
           className="w-12 h-12 rounded-full glass-card flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300 group"
@@ -161,7 +161,7 @@ export default function HeroSlider() {
           <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
         </button>
       </div>
-      <div className="absolute bottom-1/2 translate-y-1/2 right-4 lg:right-8 z-30">
+      <div className="absolute bottom-1/2 translate-y-1/2 right-4 lg:right-8 z-30 hidden md:block">
         <button
           onClick={next}
           className="w-12 h-12 rounded-full glass-card flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300 group"
