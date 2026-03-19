@@ -8,10 +8,9 @@ const staticLinks = {
     { name: 'Contact', href: '/contact' },
   ],
   support: [
-    { name: 'Shipping Info', href: '/contact' },
-    { name: 'FAQ', href: '/contact' },
-    { name: 'Privacy Policy', href: '/contact' },
-    { name: 'Terms of Service', href: '/contact' },
+    { name: 'FAQ', href: '/faq' },
+    { name: 'Privacy Policy', href: '/privacy' },
+    { name: 'Terms of Service', href: '/terms' },
   ],
 };
 
@@ -109,9 +108,8 @@ export default async function Footer() {
             &copy; {new Date().getFullYear()} Rayn Look. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-gray-500">
-            <Link href="/contact" className="hover:text-white transition-colors">Privacy</Link>
-            <Link href="/contact" className="hover:text-white transition-colors">Terms</Link>
-            <Link href="/contact" className="hover:text-white transition-colors">Cookies</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           </div>
         </div>
       </div>

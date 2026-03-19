@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, Search } from 'lucide-react';
+import { ShoppingBag, Menu, X } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart';
 
 const navigation = [
@@ -71,9 +71,6 @@ export default function Header() {
 
           {/* Right actions */}
           <div className="flex items-center gap-4">
-            <button aria-label="Search" className="p-2 text-dark hover:text-gold transition-colors hover:scale-110 active:scale-95 duration-200">
-              <Search className="h-5 w-5" />
-            </button>
             <button
               onClick={openCart}
               className="relative p-2 text-dark hover:text-gold transition-colors hover:scale-110 active:scale-95 duration-200"

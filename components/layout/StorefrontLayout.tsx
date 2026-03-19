@@ -2,6 +2,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/ui/CartDrawer';
 import WhatsAppButton from '@/components/ui/WhatsAppButton';
+import CookieConsent from '@/components/ui/CookieConsent';
 
 export default function StorefrontLayout({
   children,
@@ -15,6 +16,7 @@ export default function StorefrontLayout({
       <main className="min-h-screen">{children}</main>
       <Footer />
       <WhatsAppButton />
+      <CookieConsent />
     </>
   );
 }
