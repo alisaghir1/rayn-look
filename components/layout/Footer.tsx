@@ -94,11 +94,13 @@ export default async function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <a href={`mailto:${siteConfig.contact.email}`} className="text-gray-400 hover:text-white text-sm transition-colors">{siteConfig.contact.email}</a>
+              </li>
+              <li>
+                <a href={`tel:${siteConfig.contact.phone.replace(/\s/g, '')}`} className="text-gray-400 hover:text-white text-sm transition-colors">{siteConfig.contact.phone}</a>
+              </li>
             </ul>
-            <div className="mt-6 text-sm text-gray-400">
-              <p>{siteConfig.contact.email}</p>
-              <p>{siteConfig.contact.phone}</p>
-            </div>
           </div>
         </div>
 
