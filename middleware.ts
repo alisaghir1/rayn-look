@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac } from 'crypto';
 
-// ─── HMAC token verification (duplicated from lib/auth for Edge Runtime) ───
+// ─── HMAC token verification (Web Crypto API — Edge Runtime compatible) ───
 const SECRET = process.env.JWT_SECRET || 'CHANGE_THIS_IN_PRODUCTION';
 const TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-function verifyTokenInMiddleware(token: string): boolean {
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyTokenInMiddleware(token: string): Promise<boolean> {
   const dotIndex = token.lastIndexOf('.');
   if (dotIndex === -1) return false;
 
@@ -14,13 +25,33 @@ function verifyTokenInMiddleware(token: string): boolean {
 
   let payload: string;
   try {
-    payload = Buffer.from(payloadB64, 'base64').toString('utf-8');
+    payload = atob(payloadB64);
   } catch {
     return false;
   }
 
-  const expected = createHmac('sha256', SECRET).update(payload).digest('hex');
-  if (signature !== expected) return false;
+  // HMAC-SHA256 using Web Crypto API
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(payload));
+  const expected = bytesToHex(new Uint8Array(sig));
+
+  if (signature.length !== expected.length) return false;
+  // Constant-time comparison
+  let mismatch = 0;
+  const sigBytes = hexToBytes(signature);
+  const expBytes = hexToBytes(expected);
+  if (sigBytes.length !== expBytes.length) return false;
+  for (let i = 0; i < sigBytes.length; i++) {
+    mismatch |= sigBytes[i] ^ expBytes[i];
+  }
+  if (mismatch !== 0) return false;
 
   // Check expiration
   const parts = payload.split(':');
@@ -44,7 +75,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ─── Protect Admin API Routes ────────────────────────────────
@@ -85,7 +116,7 @@ export function middleware(request: NextRequest) {
 
   if (isProtectedApi || (isResourceApi && isWriteMethod)) {
     const token = request.cookies.get('admin_session')?.value;
-    if (!token || !verifyTokenInMiddleware(token)) {
+    if (!token || !(await verifyTokenInMiddleware(token))) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -99,7 +130,7 @@ export function middleware(request: NextRequest) {
     // Allow the login page itself
     if (pathname === '/admin/login') {
       const token = request.cookies.get('admin_session')?.value;
-      if (token && verifyTokenInMiddleware(token)) {
+      if (token && (await verifyTokenInMiddleware(token))) {
         return NextResponse.redirect(new URL('/admin', request.url));
       }
       return addSecurityHeaders(NextResponse.next());
@@ -107,7 +138,7 @@ export function middleware(request: NextRequest) {
 
     // Check for valid admin session cookie
     const token = request.cookies.get('admin_session')?.value;
-    if (!token || !verifyTokenInMiddleware(token)) {
+    if (!token || !(await verifyTokenInMiddleware(token))) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 

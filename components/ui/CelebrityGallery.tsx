@@ -36,8 +36,8 @@ export default function CelebrityGallery() {
     <section className="py-24 lg:py-32 bg-white relative overflow-hidden">
       {/* Decorative background */}
       <div className="absolute inset-0 opacity-[0.02]">
-        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-gold blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-gold blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-gold blur-3xl animate-float-slow" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-gold blur-3xl animate-float-slow" style={{ animationDelay: '3s' }} />
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative">
@@ -61,7 +61,7 @@ export default function CelebrityGallery() {
             <button
               key={celeb.id}
               onClick={() => setSelectedCeleb(celeb)}
-              className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 card-hover cursor-pointer text-left"
+              className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50 magnetic-hover cursor-pointer text-left"
               style={{ animationDelay: `${i * 0.1}s` }}
             >
               {/* Celebrity image or fallback */}

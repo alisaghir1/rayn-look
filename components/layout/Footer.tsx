@@ -1,15 +1,8 @@
 import Link from 'next/link';
 import { siteConfig } from '@/lib/constants';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
-const footerLinks = {
-  shop: [
-    { name: 'All Lenses', href: '/shop' },
-    { name: 'Brown Lenses', href: '/shop/brown-lenses' },
-    { name: 'Gray Lenses', href: '/shop/gray-lenses' },
-    { name: 'Green Lenses', href: '/shop/green-lenses' },
-    { name: 'Blue Lenses', href: '/shop/blue-lenses' },
-    { name: 'Monthly Lenses', href: '/shop/monthly-lenses' },
-  ],
+const staticLinks = {
   company: [
     { name: 'About Us', href: '/about' },
     { name: 'Contact', href: '/contact' },
@@ -22,7 +15,17 @@ const footerLinks = {
   ],
 };
 
-export default function Footer() {
+export default async function Footer() {
+  const { data: categories } = await supabaseAdmin
+    .from('Category')
+    .select('name, slug')
+    .eq('active', true)
+    .order('sortOrder', { ascending: true });
+
+  const shopLinks = [
+    { name: 'All Products', href: '/shop' },
+    ...(categories || []).map((c) => ({ name: c.name, href: `/shop/${c.slug}` })),
+  ];
   return (
     <footer className="bg-dark text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -57,7 +60,7 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-gold mb-4">Shop</h3>
             <ul className="space-y-3">
-              {footerLinks.shop.map((link) => (
+              {shopLinks.map((link) => (
                 <li key={link.name}>
                   <Link href={link.href} className="text-gray-400 hover:text-white text-sm transition-colors">
                     {link.name}
@@ -71,7 +74,7 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-gold mb-4">Company</h3>
             <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
+              {staticLinks.company.map((link) => (
                 <li key={link.name}>
                   <Link href={link.href} className="text-gray-400 hover:text-white text-sm transition-colors">
                     {link.name}
@@ -85,7 +88,7 @@ export default function Footer() {
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-gold mb-4">Support</h3>
             <ul className="space-y-3">
-              {footerLinks.support.map((link) => (
+              {staticLinks.support.map((link) => (
                 <li key={link.name}>
                   <Link href={link.href} className="text-gray-400 hover:text-white text-sm transition-colors">
                     {link.name}

@@ -18,6 +18,8 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string; type: string }[]>([]);
+
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -40,6 +42,11 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const isLens = formData.productType === 'contact-lenses';
 
   useEffect(() => {
+    fetch('/api/categories')
+      .then((res) => res.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+
     fetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((product) => {
@@ -178,8 +185,20 @@ export default function EditProductPage({ params }: EditProductPageProps) {
           </div>
           <div className={`grid ${isLens ? 'grid-cols-3' : 'grid-cols-1'} gap-4`}>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Category ID</label>
-              <input type="text" name="categoryId" value={formData.categoryId} onChange={handleChange} className="w-full px-4 py-3 bg-admin-bg border border-white/10 rounded-lg text-white focus:outline-none focus:border-admin-accent" />
+              <label className="block text-sm text-gray-400 mb-1">Category</label>
+              <select
+                name="categoryId"
+                value={formData.categoryId}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-admin-bg border border-white/10 rounded-lg text-white focus:outline-none focus:border-admin-accent"
+              >
+                <option value="">Select a category</option>
+                {categories
+                  .filter((c) => isLens ? c.type === 'contact-lenses' : c.type === 'accessory')
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+              </select>
             </div>
             {isLens && (
               <>

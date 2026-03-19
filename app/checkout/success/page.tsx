@@ -17,9 +17,9 @@ export default async function CheckoutSuccessPage({
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
-      <div className="max-w-lg w-full text-center">
+      <div className="max-w-lg w-full text-center animate-slide-up">
         <div className="flex justify-center mb-6">
-          <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center">
+          <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center animate-bounce-in">
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
         </div>

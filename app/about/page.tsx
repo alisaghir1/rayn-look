@@ -3,6 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import TrustBadges from '@/components/ui/TrustBadges';
+import ScrollReveal from '@/components/ui/ScrollReveal';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
+import { StaggerGrid } from '@/components/ui/HomeAnimations';
 
 export const metadata: Metadata = {
   title: 'About Us — Our Story Since 2014',
@@ -51,7 +54,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-16 lg:gap-24 items-center">
             {/* Photo placeholder */}
-            <div className="relative order-2 md:order-1">
+            <ScrollReveal animation="fade-right" duration={900} className="relative order-2 md:order-1">
               <div className="aspect-[3/4] rounded-3xl bg-gradient-to-br from-dark via-dark/90 to-dark/70 overflow-hidden relative">
                 <Image
                   src="/rayn.jpg"
@@ -73,18 +76,18 @@ export default function AboutPage() {
                 <div className="absolute inset-6 rounded-2xl border border-gold/15" />
               </div>
               {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 bg-gold text-white rounded-2xl px-5 py-3 shadow-xl">
-                <p className="text-xl font-bold font-lobster">12+</p>
+              <div className="absolute -top-4 -right-4 bg-gold text-white rounded-2xl px-5 py-3 shadow-xl animate-float-slow">
+                <p className="text-xl font-bold font-lobster"><AnimatedCounter end={12} suffix="+" /></p>
                 <p className="text-xs uppercase tracking-wider">Years</p>
               </div>
-              <div className="absolute -bottom-4 -left-4 bg-dark text-white rounded-2xl px-5 py-3 shadow-xl border border-gold/20">
-                <p className="text-xl font-bold font-lobster">30+</p>
+              <div className="absolute -bottom-4 -left-4 bg-dark text-white rounded-2xl px-5 py-3 shadow-xl border border-gold/20 animate-float-slow" style={{ animationDelay: '1.5s' }}>
+                <p className="text-xl font-bold font-lobster"><AnimatedCounter end={30} suffix="+" /></p>
                 <p className="text-xs uppercase tracking-wider">Countries</p>
               </div>
-            </div>
+            </ScrollReveal>
 
             {/* Story */}
-            <div className="order-1 md:order-2">
+            <ScrollReveal animation="fade-left" delay={200} duration={900} className="order-1 md:order-2">
               <p className="text-gold text-sm uppercase tracking-[0.3em] mb-4">Meet The Founder</p>
               <h2
                 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-6 leading-tight font-lobster"
@@ -117,7 +120,7 @@ export default function AboutPage() {
                   Get In Touch
                 </Link>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -191,8 +194,8 @@ export default function AboutPage() {
                 desc: 'We continuously push boundaries to deliver better comfort, more natural colors, and superior clarity.',
               },
             ].map((v) => (
-              <div key={v.title} className="bg-gray-light rounded-2xl p-10 text-center card-hover hover:shadow-lg group">
-                <span className="text-5xl block mb-6 transition-transform duration-300 group-hover:scale-110">{v.icon}</span>
+              <div key={v.title} className="bg-gray-light rounded-2xl p-10 text-center magnetic-hover hover:shadow-lg group">
+                <span className="text-5xl block mb-6 transition-transform duration-500 group-hover:scale-125 group-hover:rotate-6">{v.icon}</span>
                 <h3 className="text-lg font-semibold text-dark mb-3">{v.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{v.desc}</p>
               </div>

@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, slug, description, categoryId, color, duration, price, compareAtPrice, sku, stockQuantity, images, featured } = body;
+    const { name, slug, description, categoryId, productType, color, duration, hasDegree, availableDegrees, price, compareAtPrice, sku, stockQuantity, images, featured } = body;
 
-    if (!name || !slug || !description || !categoryId || !color || !price || !sku) {
+    if (!name || !slug || !description || !price || !sku) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -64,9 +64,12 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         description,
-        categoryId,
-        color,
+        categoryId: categoryId || null,
+        productType: productType || 'contact-lenses',
+        color: color || null,
         duration: duration || 'MONTHLY',
+        hasDegree: hasDegree || false,
+        availableDegrees: availableDegrees || [],
         price: parseFloat(price),
         compareAtPrice: compareAtPrice ? parseFloat(compareAtPrice) : null,
         sku,
@@ -89,8 +92,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(product, { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('POST /api/products error:', error);
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to create product';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

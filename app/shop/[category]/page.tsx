@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import ProductCard from '@/components/ui/ProductCard';
-import { categories } from '@/lib/constants';
+import { StaggerGrid } from '@/components/ui/HomeAnimations';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 interface CategoryPageProps {
   params: Promise<{ category: string }>;
@@ -11,7 +12,13 @@ interface CategoryPageProps {
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { category: slug } = await params;
-  const category = categories.find((c) => c.slug === slug);
+  const { data: category } = await supabaseAdmin
+    .from('Category')
+    .select('name, description')
+    .eq('slug', slug)
+    .eq('active', true)
+    .single();
+
   if (!category) return {};
 
   return {
@@ -20,33 +27,49 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     alternates: { canonical: `/shop/${slug}` },
     openGraph: {
       title: `${category.name} — Rayn Look`,
-      description: category.description,
+      description: category.description || '',
     },
   };
 }
 
-// Mock products per category
-const getMockProductsByCategory = (slug: string) => {
-  const allProducts = [
-    { id: '1', name: 'Amber Glow', slug: 'amber-glow', price: 29.99, compareAtPrice: 39.99, images: [], color: 'Brown', duration: 'Monthly', category: { name: 'Brown Lenses', slug: 'brown-lenses' } },
-    { id: '2', name: 'Silver Mist', slug: 'silver-mist', price: 34.99, compareAtPrice: null, images: [], color: 'Gray', duration: 'Monthly', category: { name: 'Gray Lenses', slug: 'gray-lenses' } },
-    { id: '3', name: 'Forest Dream', slug: 'forest-dream', price: 32.99, compareAtPrice: 42.99, images: [], color: 'Green', duration: 'Monthly', category: { name: 'Green Lenses', slug: 'green-lenses' } },
-    { id: '4', name: 'Ocean Deep', slug: 'ocean-deep', price: 31.99, compareAtPrice: null, images: [], color: 'Blue', duration: 'Yearly', category: { name: 'Blue Lenses', slug: 'blue-lenses' } },
-    { id: '5', name: 'Hazel Charm', slug: 'hazel-charm', price: 35.99, compareAtPrice: 45.99, images: [], color: 'Hazel', duration: 'Monthly', category: { name: 'Hazel Lenses', slug: 'hazel-lenses' } },
-    { id: '6', name: 'Caramel Touch', slug: 'caramel-touch', price: 28.99, compareAtPrice: null, images: [], color: 'Brown', duration: 'Yearly', category: { name: 'Brown Lenses', slug: 'brown-lenses' } },
-  ];
-
-  if (slug === 'monthly-lenses') return allProducts.filter((p) => p.duration === 'Monthly');
-  if (slug === 'yearly-lenses') return allProducts.filter((p) => p.duration === 'Yearly');
-  return allProducts.filter((p) => p.category.slug === slug);
-};
-
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { category: slug } = await params;
-  const category = categories.find((c) => c.slug === slug);
+
+  const [{ data: category }, { data: allCategories }, { data: products }] = await Promise.all([
+    supabaseAdmin
+      .from('Category')
+      .select('id, name, slug, description')
+      .eq('slug', slug)
+      .eq('active', true)
+      .single(),
+    supabaseAdmin
+      .from('Category')
+      .select('name, slug')
+      .eq('active', true)
+      .order('sortOrder', { ascending: true }),
+    supabaseAdmin
+      .from('Product')
+      .select('id, name, slug, price, compareAtPrice, images, color, duration, categoryId, Category:categoryId(name, slug)')
+      .eq('active', true)
+      .order('createdAt', { ascending: false }),
+  ]);
+
   if (!category) notFound();
 
-  const products = getMockProductsByCategory(slug);
+  const categories = allCategories || [];
+  const categoryProducts = (products || [])
+    .filter((p: Record<string, unknown>) => p.categoryId === category.id)
+    .map((p: Record<string, unknown>) => ({
+      id: p.id as string,
+      name: p.name as string,
+      slug: p.slug as string,
+      price: p.price as number,
+      compareAtPrice: p.compareAtPrice as number | null,
+      images: (p.images as string[]) || [],
+      color: (p.color as string) || '',
+      duration: (p.duration as string) || '',
+      category: (p.Category as { name: string; slug: string }) || { name: '', slug: '' },
+    }));
 
   return (
     <StorefrontLayout>
@@ -106,12 +129,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       {/* Products Grid */}
       <section className="py-12 lg:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {products.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
-              {products.map((product) => (
+          {categoryProducts.length > 0 ? (
+            <StaggerGrid className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8" delay={80}>
+              {categoryProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </StaggerGrid>
           ) : (
             <div className="text-center py-20">
               <p className="text-gray-500 text-lg mb-4">No products found in this category.</p>
@@ -122,23 +145,25 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       </section>
 
       {/* ItemList Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'ItemList',
-            name: category.name,
-            numberOfItems: products.length,
-            itemListElement: products.map((p, i) => ({
-              '@type': 'ListItem',
-              position: i + 1,
-              url: `https://www.raynlook.com/shop/product/${p.slug}`,
-              name: p.name,
-            })),
-          }),
-        }}
-      />
+      {categoryProducts.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'ItemList',
+              name: category.name,
+              numberOfItems: categoryProducts.length,
+              itemListElement: categoryProducts.map((p, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                url: `https://www.raynlook.com/shop/product/${p.slug}`,
+                name: p.name,
+              })),
+            }),
+          }}
+        />
+      )}
     </StorefrontLayout>
   );
 }

@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import ProductCard from '@/components/ui/ProductCard';
-import { categories } from '@/lib/constants';
+import ScrollReveal from '@/components/ui/ScrollReveal';
+import { StaggerGrid } from '@/components/ui/HomeAnimations';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
@@ -13,11 +14,20 @@ export const metadata: Metadata = {
 };
 
 export default async function ShopPage() {
-  const { data: products } = await supabaseAdmin
-    .from('Product')
-    .select('id, name, slug, price, compareAtPrice, images, color, duration, categoryId, Category:categoryId(name, slug)')
-    .eq('active', true)
-    .order('createdAt', { ascending: false });
+  const [{ data: products }, { data: dbCategories }] = await Promise.all([
+    supabaseAdmin
+      .from('Product')
+      .select('id, name, slug, price, compareAtPrice, images, color, duration, categoryId, Category:categoryId(name, slug)')
+      .eq('active', true)
+      .order('createdAt', { ascending: false }),
+    supabaseAdmin
+      .from('Category')
+      .select('name, slug')
+      .eq('active', true)
+      .order('sortOrder', { ascending: true }),
+  ]);
+
+  const categories = dbCategories || [];
 
   const allProducts = (products || []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
@@ -34,15 +44,18 @@ export default async function ShopPage() {
   return (
     <StorefrontLayout>
       {/* Hero */}
-      <section className="bg-dark text-white py-16 lg:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gold text-sm uppercase tracking-[0.3em] mb-3">Our Collection</p>
+      <section className="bg-dark text-white py-16 lg:py-20 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/2 right-[10%] -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-gold/10 animate-spin-slow hidden lg:block" />
+        </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative">
+          <p className="text-gold text-sm uppercase tracking-[0.3em] mb-3 animate-fade-in">Our Collection</p>
           <h1
-            className="text-3xl md:text-5xl font-bold mb-4 font-lobster"
+            className="text-3xl md:text-5xl font-bold mb-4 font-lobster animate-slide-up"
           >
             Shop All <span className="text-gradient-gold">Lenses</span>
           </h1>
-          <p className="text-gray-400 max-w-xl mx-auto">
+          <p className="text-gray-400 max-w-xl mx-auto animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
             Premium contact lenses for every style and occasion.
           </p>
         </div>
@@ -80,11 +93,11 @@ export default async function ShopPage() {
               <p className="text-gray-400 text-sm">Check back soon for our premium collection!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
+            <StaggerGrid className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8" delay={80}>
               {allProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
-            </div>
+            </StaggerGrid>
           )}
         </div>
       </section>

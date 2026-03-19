@@ -67,9 +67,12 @@ export async function POST(request: NextRequest) {
     // Create HMAC-signed session token
     const token = createSessionToken(user.id, user.email);
 
-    // Set HTTP-only cookie
-    const cookieStore = await cookies();
-    cookieStore.set('admin_session', token, {
+    // Set HTTP-only cookie on the response object
+    const response = NextResponse.json({
+      success: true,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+    response.cookies.set('admin_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -77,10 +80,7 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
-    return NextResponse.json({
-      success: true,
-      user: { id: user.id, name: user.name, email: user.email },
-    });
+    return response;
   } catch (error) {
     console.error('Admin auth error:', error);
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/admin/auth — Logout
 export async function DELETE() {
-  const cookieStore = await cookies();
-  cookieStore.set('admin_session', '', {
+  const response = NextResponse.json({ success: true });
+  response.cookies.set('admin_session', '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
@@ -98,7 +98,7 @@ export async function DELETE() {
     maxAge: 0,
   });
 
-  return NextResponse.json({ success: true });
+  return response;
 }
 
 // GET /api/admin/auth — Check session

@@ -44,18 +44,13 @@ export function generateDegreeValues(): string[] {
   return values;
 }
 
-// Lens color categories
+// Product categories
 export const categories = [
-  { name: 'Brown Lenses', slug: 'brown-lenses', description: 'Warm, natural brown tones for an effortlessly elegant look.', type: 'contact-lenses' },
-  { name: 'Gray Lenses', slug: 'gray-lenses', description: 'Cool, sophisticated gray shades for a striking appearance.', type: 'contact-lenses' },
-  { name: 'Green Lenses', slug: 'green-lenses', description: 'Fresh, vibrant green hues for a captivating gaze.', type: 'contact-lenses' },
-  { name: 'Blue Lenses', slug: 'blue-lenses', description: 'Deep, mesmerizing blue tones for an ocean-inspired look.', type: 'contact-lenses' },
-  { name: 'Hazel Lenses', slug: 'hazel-lenses', description: 'Multi-tonal hazel blends for a unique, natural appearance.', type: 'contact-lenses' },
-  { name: 'Yearly Lenses', slug: 'yearly-lenses', description: 'Long-lasting yearly lenses for sustained comfort and style.', type: 'contact-lenses' },
-  { name: 'Daily Lenses', slug: 'daily-lenses', description: 'Fresh daily lenses for everyday convenience.', type: 'contact-lenses' },
-  { name: 'Lens Solution', slug: 'lens-solution', description: 'Premium lens care solutions for optimal hygiene and comfort.', type: 'accessory' },
-  { name: 'Lashes', slug: 'lashes', description: 'Luxury false lashes to complement your Rayn Look.', type: 'accessory' },
+  { name: 'With Degrees', slug: 'with-degrees', description: 'Prescription colored contact lenses with corrective degrees.', type: 'contact-lenses' },
+  { name: 'Without Degrees', slug: 'without-degrees', description: 'Cosmetic colored contact lenses without prescription.', type: 'contact-lenses' },
   { name: 'Accessories', slug: 'accessories', description: 'Lens cases, tweezers, and more essentials.', type: 'accessory' },
+  { name: 'Lashes', slug: 'lashes', description: 'Luxury false lashes to complement your Rayn Look.', type: 'accessory' },
+  { name: 'Solution', slug: 'solution', description: 'Premium lens care solutions for optimal hygiene and comfort.', type: 'accessory' },
 ];
 
 // Payment methods
@@ -66,6 +61,7 @@ export const paymentMethods = [
 
 export const trustBadges = [
   { icon: 'Shield', label: 'FDA Approved' },
+  { icon: 'Eye', label: 'Super Natural' },
   { icon: 'Truck', label: 'Worldwide Shipping' },
   { icon: 'Award', label: 'Premium Quality' },
 ];

@@ -65,14 +65,14 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Image Gallery */}
-          <div className="space-y-4">
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-light">
+          <div className="space-y-4 animate-fade-in">
+            <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-light shimmer-overlay">
               {product.images[selectedImage] ? (
                 <Image
                   src={product.images[selectedImage]}
                   alt={product.name}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-all duration-500"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
                 />
@@ -82,7 +82,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               )}
               {discount > 0 && (
-                <span className="absolute top-4 left-4 bg-gold text-white text-sm font-medium px-3 py-1 rounded">
+                <span className="absolute top-4 left-4 bg-gold text-white text-sm font-medium px-3 py-1 rounded animate-bounce-in">
                   -{discount}% OFF
                 </span>
               )}
@@ -105,7 +105,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           </div>
 
           {/* Product Info - Sticky */}
-          <div className="lg:sticky lg:top-24 lg:self-start space-y-6">
+          <div className="lg:sticky lg:top-24 lg:self-start space-y-6 animate-slide-up" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
             <div>
               <p className="text-gold text-sm uppercase tracking-wider mb-2">{product.category.name}</p>
               <h1

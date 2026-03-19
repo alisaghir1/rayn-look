@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
 
 interface Testimonial {
   id: string;
@@ -172,15 +173,21 @@ export default function Testimonials() {
         {/* Stats bar */}
         <div className="grid grid-cols-3 gap-8 mt-16 pt-12 border-t border-white/10 text-center">
           <div>
-            <p className="text-3xl md:text-4xl font-bold text-gradient-gold font-lobster">10K+</p>
+            <p className="text-3xl md:text-4xl font-bold text-gradient-gold font-lobster">
+              <AnimatedCounter end={10} suffix="K+" duration={2000} />
+            </p>
             <p className="text-gray-400 text-sm mt-2">Happy Customers</p>
           </div>
           <div>
-            <p className="text-3xl md:text-4xl font-bold text-gradient-gold font-lobster">4.9</p>
-            <p className="text-gray-400 text-sm mt-2">Average Rating</p>
+            <p className="text-3xl md:text-4xl font-bold text-gradient-gold font-lobster">
+              <AnimatedCounter end={49} prefix="" suffix="" duration={2000} />
+            </p>
+            <p className="text-gray-400 text-sm mt-2">Average Rating (4.9)</p>
           </div>
           <div>
-            <p className="text-3xl md:text-4xl font-bold text-gradient-gold font-lobster">30+</p>
+            <p className="text-3xl md:text-4xl font-bold text-gradient-gold font-lobster">
+              <AnimatedCounter end={30} suffix="+" duration={2000} />
+            </p>
             <p className="text-gray-400 text-sm mt-2">Countries Worldwide</p>
           </div>
         </div>

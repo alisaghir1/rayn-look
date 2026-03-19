@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, ArrowLeft } from 'lucide-react';
 import MultiImageSelector from '@/components/admin/MultiImageSelector';
@@ -13,6 +13,15 @@ const degreeValues = generateDegreeValues();
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string; type: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((res) => res.json())
+      .then((data) => setCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -175,16 +184,21 @@ export default function NewProductPage() {
 
           <div className={`grid ${isLens ? 'grid-cols-3' : 'grid-cols-1'} gap-4`}>
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Category ID *</label>
-              <input
-                type="text"
+              <label className="block text-sm text-gray-400 mb-1">Category *</label>
+              <select
                 name="categoryId"
                 required
                 value={formData.categoryId}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-admin-bg border border-white/10 rounded-lg text-white focus:outline-none focus:border-admin-accent"
-                placeholder="Category ID"
-              />
+              >
+                <option value="">Select a category</option>
+                {categories
+                  .filter((c) => isLens ? c.type === 'contact-lenses' : c.type === 'accessory')
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+              </select>
             </div>
             {isLens && (
               <>

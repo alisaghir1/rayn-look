@@ -269,16 +269,11 @@ CREATE POLICY "Anon insert orderitems" ON "OrderItem" FOR INSERT WITH CHECK (tru
 
 -- Seed default categories
 INSERT INTO "Category" (name, slug, description, type, "sortOrder") VALUES
-  ('Brown Lenses', 'brown-lenses', 'Warm, natural brown tones for an effortlessly elegant look.', 'contact-lenses', 1),
-  ('Gray Lenses', 'gray-lenses', 'Cool, sophisticated gray shades for a striking appearance.', 'contact-lenses', 2),
-  ('Green Lenses', 'green-lenses', 'Fresh, vibrant green hues for a captivating gaze.', 'contact-lenses', 3),
-  ('Blue Lenses', 'blue-lenses', 'Deep, mesmerizing blue tones for an ocean-inspired look.', 'contact-lenses', 4),
-  ('Hazel Lenses', 'hazel-lenses', 'Multi-tonal hazel blends for a unique, natural appearance.', 'contact-lenses', 5),
-  ('Yearly Lenses', 'yearly-lenses', 'Long-lasting yearly lenses for sustained comfort and style.', 'contact-lenses', 6),
-  ('Daily Lenses', 'daily-lenses', 'Fresh daily lenses for everyday convenience.', 'contact-lenses', 7),
-  ('Lens Solution', 'lens-solution', 'Premium lens care solutions for optimal hygiene and comfort.', 'accessory', 8),
-  ('Lashes', 'lashes', 'Luxury false lashes to complement your Rayn Look.', 'accessory', 9),
-  ('Accessories', 'accessories', 'Lens cases, tweezers, and more essentials.', 'accessory', 10)
+  ('With Degrees', 'with-degrees', 'Prescription colored contact lenses with corrective degrees.', 'contact-lenses', 1),
+  ('Without Degrees', 'without-degrees', 'Cosmetic colored contact lenses without prescription.', 'contact-lenses', 2),
+  ('Accessories', 'accessories', 'Lens cases, tweezers, and more essentials.', 'accessory', 3),
+  ('Lashes', 'lashes', 'Luxury false lashes to complement your Rayn Look.', 'accessory', 4),
+  ('Solution', 'solution', 'Premium lens care solutions for optimal hygiene and comfort.', 'accessory', 5)
 ON CONFLICT (slug) DO NOTHING;
 
 -- Seed admin user (change password after first login!)
