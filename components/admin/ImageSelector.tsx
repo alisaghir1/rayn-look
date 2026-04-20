@@ -38,9 +38,9 @@ export default function ImageSelector({
     setUploading(true);
 
     // Client-side validation
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file. Use JPG, PNG, WebP, GIF, or SVG.');
+      setError('Invalid file. Use JPG, PNG, WebP, or GIF.');
       setUploading(false);
       return;
     }
@@ -118,7 +118,7 @@ export default function ImageSelector({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         onChange={handleFileSelect}
         className="hidden"
       />

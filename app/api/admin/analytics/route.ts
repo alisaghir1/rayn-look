@@ -70,42 +70,85 @@ export async function GET(request: NextRequest) {
     const monthPaidRes = await supabaseAdmin.from('Order').select('total').eq('paymentStatus', 'PAID').gte('createdAt', monthStart);
     const monthRevenue = (monthPaidRes.data || []).reduce((sum, o) => sum + o.total, 0);
 
-    // --- Top selling products (aggregate from OrderItem within period) ---
-    const periodOrderIds = periodOrders.map((o) => {
-      // We need order IDs - fetch them
-      return null;
-    });
-    // Fetch order items globally (simpler, matches all time)
-    const { data: orderItems } = await supabaseAdmin.from('OrderItem').select('productId, quantity, total');
-    const productAgg: Record<string, { quantity: number; total: number }> = {};
-    (orderItems || []).forEach((oi) => {
-      if (!productAgg[oi.productId]) productAgg[oi.productId] = { quantity: 0, total: 0 };
-      productAgg[oi.productId].quantity += oi.quantity;
-      productAgg[oi.productId].total += oi.total;
-    });
-    const topProductIds = Object.entries(productAgg)
-      .sort((a, b) => b[1].quantity - a[1].quantity)
-      .slice(0, 5);
+    // --- Top selling products (filtered by period) ---
+    const periodOrderIdsRes = await supabaseAdmin
+      .from('Order')
+      .select('id')
+      .gte('createdAt', periodStart);
+    const periodOrderIds = (periodOrderIdsRes.data || []).map((o) => o.id);
 
-    const topProducts = [];
-    for (const [pid, stats] of topProductIds) {
-      const { data: p } = await supabaseAdmin.from('Product').select('name, slug').eq('id', pid).single();
-      topProducts.push({ name: p?.name || 'Unknown', slug: p?.slug || '', totalSold: stats.quantity, totalRevenue: stats.total });
+    let topProducts: { name: string; slug: string; totalSold: number; totalRevenue: number }[] = [];
+    if (periodOrderIds.length > 0) {
+      const { data: orderItems } = await supabaseAdmin
+        .from('OrderItem')
+        .select('productId, quantity, total')
+        .in('orderId', periodOrderIds);
+
+      const productAgg: Record<string, { quantity: number; total: number }> = {};
+      (orderItems || []).forEach((oi) => {
+        if (!productAgg[oi.productId]) productAgg[oi.productId] = { quantity: 0, total: 0 };
+        productAgg[oi.productId].quantity += oi.quantity;
+        productAgg[oi.productId].total += oi.total;
+      });
+
+      const topProductIds = Object.entries(productAgg)
+        .sort((a, b) => b[1].quantity - a[1].quantity)
+        .slice(0, 5);
+
+      // Batch fetch product names
+      const pids = topProductIds.map(([pid]) => pid);
+      const { data: productNames } = await supabaseAdmin
+        .from('Product')
+        .select('id, name, slug')
+        .in('id', pids);
+      const productMap = new Map((productNames || []).map((p) => [p.id, p]));
+
+      topProducts = topProductIds.map(([pid, stats]) => {
+        const p = productMap.get(pid);
+        return { name: p?.name || 'Unknown', slug: p?.slug || '', totalSold: stats.quantity, totalRevenue: stats.total };
+      });
     }
 
-    // --- Category performance ---
-    const categoryPerformance = [];
-    for (const cat of categoriesRes.data || []) {
-      const { data: products } = await supabaseAdmin.from('Product').select('id').eq('categoryId', cat.id);
-      const pids = (products || []).map((p) => p.id);
-      let catRevenue = 0;
-      if (pids.length > 0) {
-        const { data: catItems } = await supabaseAdmin.from('OrderItem').select('total').in('productId', pids);
-        catRevenue = (catItems || []).reduce((sum, oi) => sum + oi.total, 0);
+    // --- Category performance (filtered by period) ---
+    const categoryPerformance: { name: string; revenue: number; productCount: number }[] = [];
+    const allCats = categoriesRes.data || [];
+    if (allCats.length > 0) {
+      // Get all products with their categories
+      const { data: allProducts } = await supabaseAdmin
+        .from('Product')
+        .select('id, categoryId')
+        .eq('active', true);
+
+      const catProductMap = new Map<string, string[]>();
+      (allProducts || []).forEach((p) => {
+        const list = catProductMap.get(p.categoryId) || [];
+        list.push(p.id);
+        catProductMap.set(p.categoryId, list);
+      });
+
+      // Get all order items in period (already have periodOrderIds)
+      let periodItems: { productId: string; total: number }[] = [];
+      if (periodOrderIds.length > 0) {
+        const { data: items } = await supabaseAdmin
+          .from('OrderItem')
+          .select('productId, total')
+          .in('orderId', periodOrderIds);
+        periodItems = items || [];
       }
-      categoryPerformance.push({ name: cat.name, revenue: catRevenue, productCount: pids.length });
+
+      // Aggregate revenue by productId
+      const productRevMap = new Map<string, number>();
+      periodItems.forEach((oi) => {
+        productRevMap.set(oi.productId, (productRevMap.get(oi.productId) || 0) + oi.total);
+      });
+
+      for (const cat of allCats) {
+        const pids = catProductMap.get(cat.id) || [];
+        const catRevenue = pids.reduce((sum, pid) => sum + (productRevMap.get(pid) || 0), 0);
+        categoryPerformance.push({ name: cat.name, revenue: catRevenue, productCount: pids.length });
+      }
+      categoryPerformance.sort((a, b) => b.revenue - a.revenue);
     }
-    categoryPerformance.sort((a, b) => b.revenue - a.revenue);
 
     // --- Daily revenue/orders chart (fill all days in period) ---
     const dailyRevenueMap: Record<string, number> = {};
@@ -127,24 +170,35 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // --- Monthly growth (last 12 months) ---
-    const monthlyGrowth = [];
+    // --- Monthly growth (last 12 months — single query) ---
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1).toISOString();
+    const { data: allMonthlyOrders } = await supabaseAdmin
+      .from('Order')
+      .select('total, paymentStatus, createdAt')
+      .gte('createdAt', twelveMonthsAgo);
+
+    const monthlyBuckets = new Map<string, { revenue: number; orders: number }>();
     for (let i = 11; i >= 0; i--) {
       const mDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       const mLabel = mDate.toLocaleString('en-US', { month: 'short', year: '2-digit' });
-      const { data: mOrders } = await supabaseAdmin
-        .from('Order')
-        .select('total, paymentStatus')
-        .gte('createdAt', mDate.toISOString())
-        .lt('createdAt', mEnd.toISOString());
-      const mPaid = (mOrders || []).filter((o) => o.paymentStatus === 'PAID');
-      monthlyGrowth.push({
-        month: mLabel,
-        revenue: mPaid.reduce((s, o) => s + o.total, 0),
-        orders: (mOrders || []).length,
-      });
+      monthlyBuckets.set(mLabel, { revenue: 0, orders: 0 });
     }
+
+    (allMonthlyOrders || []).forEach((o) => {
+      const d = new Date(o.createdAt);
+      const label = d.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+      const bucket = monthlyBuckets.get(label);
+      if (bucket) {
+        bucket.orders += 1;
+        if (o.paymentStatus === 'PAID') bucket.revenue += o.total;
+      }
+    });
+
+    const monthlyGrowth = Array.from(monthlyBuckets.entries()).map(([month, data]) => ({
+      month,
+      revenue: data.revenue,
+      orders: data.orders,
+    }));
 
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 

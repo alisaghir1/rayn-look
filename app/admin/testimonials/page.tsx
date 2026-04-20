@@ -35,6 +35,7 @@ export default function AdminTestimonialsPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(emptyTestimonial);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const fetchTestimonials = async () => {
     try {
@@ -62,19 +63,20 @@ export default function AdminTestimonialsPage() {
   const handleSave = async () => {
     if (!form.name.trim() || !form.title.trim() || !form.text.trim()) return;
     setSaving(true);
+    setError('');
     try {
-      if (editing) {
-        await fetch(`/api/testimonials/${editing.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        });
-      } else {
-        await fetch('/api/testimonials', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        });
+      const url = editing ? `/api/testimonials/${editing.id}` : '/api/testimonials';
+      const method = editing ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to save testimonial (${res.status})`);
+        setSaving(false);
+        return;
       }
       await fetchTestimonials();
       setEditing(null);
@@ -82,6 +84,7 @@ export default function AdminTestimonialsPage() {
       setForm(emptyTestimonial);
     } catch (e) {
       console.error('Save failed:', e);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setSaving(false);
     }
@@ -90,10 +93,16 @@ export default function AdminTestimonialsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this testimonial?')) return;
     try {
-      await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to delete testimonial (${res.status})`);
+        return;
+      }
       setTestimonials(testimonials.filter((t) => t.id !== id));
     } catch (e) {
       console.error('Delete failed:', e);
+      setError('Network error. Please try again.');
     }
   };
 
@@ -142,6 +151,12 @@ export default function AdminTestimonialsPage() {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (

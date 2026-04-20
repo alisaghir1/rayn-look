@@ -42,6 +42,7 @@ export default function AdminHeroSlidesPage() {
   const [form, setForm] = useState<Omit<HeroSlide, 'id'>>(emptySlide);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const fetchSlides = () => {
     fetch('/api/hero-slides?all=true')
@@ -88,6 +89,7 @@ export default function AdminHeroSlidesPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    setError('');
     try {
       const url = isNew ? '/api/hero-slides' : `/api/hero-slides/${editing}`;
       const method = isNew ? 'POST' : 'PUT';
@@ -101,26 +103,47 @@ export default function AdminHeroSlidesPage() {
       if (res.ok) {
         fetchSlides();
         cancel();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to save slide (${res.status})`);
       }
     } catch {
-      // error
+      setError('Network error. Please check your connection and try again.');
     }
     setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this hero slide?')) return;
-    await fetch(`/api/hero-slides/${id}`, { method: 'DELETE' });
-    fetchSlides();
+    try {
+      const res = await fetch(`/api/hero-slides/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to delete slide (${res.status})`);
+        return;
+      }
+      fetchSlides();
+    } catch {
+      setError('Network error. Please try again.');
+    }
   };
 
   const toggleActive = async (slide: HeroSlide) => {
-    await fetch(`/api/hero-slides/${slide.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ active: !slide.active }),
-    });
-    fetchSlides();
+    try {
+      const res = await fetch(`/api/hero-slides/${slide.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !slide.active }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to toggle slide (${res.status})`);
+        return;
+      }
+      fetchSlides();
+    } catch {
+      setError('Network error. Please try again.');
+    }
   };
 
   if (loading) {
@@ -146,6 +169,12 @@ export default function AdminHeroSlidesPage() {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Add/Edit Form */}
       {(isNew || editing) && (

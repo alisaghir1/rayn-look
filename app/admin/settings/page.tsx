@@ -35,6 +35,7 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -57,6 +58,7 @@ export default function AdminSettingsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const res = await fetch('/api/admin/settings', {
@@ -68,9 +70,13 @@ export default function AdminSettingsPage() {
       if (res.ok) {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to save settings (${res.status})`);
       }
-    } catch (error) {
-      console.error('Settings save error:', error);
+    } catch (err) {
+      console.error('Settings save error:', err);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -187,6 +193,9 @@ export default function AdminSettingsPage() {
           </button>
           {saved && (
             <span className="text-sm text-green-400">Settings saved successfully!</span>
+          )}
+          {error && (
+            <span className="text-sm text-red-400">{error}</span>
           )}
         </div>
       </form>

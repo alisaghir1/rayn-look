@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   description:
     'Browse our complete collection of premium colored contact lenses. Monthly and yearly options in brown, gray, green, blue, and hazel.',
   alternates: { canonical: '/shop' },
+  openGraph: {
+    title: 'Shop All Lenses — Rayn Look',
+    description: 'Browse our complete collection of premium colored contact lenses. Monthly and yearly options.',
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Rayn Look Contact Lenses Collection' }],
+  },
 };
 
 export default async function ShopPage() {

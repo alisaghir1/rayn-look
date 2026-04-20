@@ -28,6 +28,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     openGraph: {
       title: `${category.name} — Rayn Look`,
       description: category.description || '',
+      images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: `${category.name} — Rayn Look` }],
     },
   };
 }

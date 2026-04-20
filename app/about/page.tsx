@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   description:
     'Founded in 2014 by Rayan, Rayn Look grew from nothing to a global premium contact lens brand — now serving customers in Lebanon, Iraq, and 30+ countries worldwide.',
   alternates: { canonical: '/about' },
+  openGraph: {
+    title: 'About Rayn Look — Our Story Since 2014',
+    description: 'Founded in 2014 by Rayan, Rayn Look grew from nothing to a global premium contact lens brand serving 30+ countries.',
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Rayn Look — Our Story' }],
+  },
 };
 
 const milestones = [

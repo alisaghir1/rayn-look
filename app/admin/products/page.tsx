@@ -17,6 +17,7 @@ interface Product {
   active: boolean;
   color: string;
   duration: string;
+  images: string[];
   category: { name: string };
 }
 
@@ -96,9 +97,18 @@ export default function AdminProductsPage() {
               {filtered.map((product) => (
                 <tr key={product.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                   <td className="p-4">
-                    <div>
-                      <p className="text-sm font-medium text-white">{product.name}</p>
-                      <p className="text-xs text-gray-400">{product.color} · {product.duration}</p>
+                    <div className="flex items-center gap-3">
+                      {product.images?.[0] ? (
+                        <img src={product.images[0]} alt={product.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                          <span className="text-lg">👁</span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-white">{product.name}</p>
+                        <p className="text-xs text-gray-400">{product.color} · {product.duration} · {product.images?.length || 0} images</p>
+                      </div>
                     </div>
                   </td>
                   <td className="p-4 text-sm text-gray-300">{product.sku}</td>

@@ -13,6 +13,7 @@ const degreeValues = generateDegreeValues();
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [categories, setCategories] = useState<{ id: string; name: string; type: string }[]>([]);
 
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function NewProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const res = await fetch('/api/products', {
@@ -88,9 +90,13 @@ export default function NewProductPage() {
 
       if (res.ok) {
         router.push('/admin/products');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to create product (${res.status})`);
       }
-    } catch (error) {
-      console.error('Create product error:', error);
+    } catch (err) {
+      console.error('Create product error:', err);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -111,6 +117,12 @@ export default function NewProductPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
         {/* Product Type */}
         <div className="bg-admin-card rounded-xl p-6 border border-white/5 space-y-4">
           <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Product Type</h2>

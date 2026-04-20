@@ -28,9 +28,9 @@ export default function MultiImageSelector({
     setError('');
     setUploading(true);
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file. Use JPG, PNG, WebP, GIF, or SVG.');
+      setError('Invalid file. Use JPG, PNG, WebP, or GIF.');
       setUploading(false);
       return;
     }
@@ -106,7 +106,7 @@ export default function MultiImageSelector({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         multiple
         onChange={handleFileSelect}
         className="hidden"
@@ -162,7 +162,7 @@ export default function MultiImageSelector({
       </div>
 
       {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
-      <p className="text-xs text-gray-600 mt-2">{value.filter(Boolean).length}/{max} images • JPG, PNG, WebP, GIF, SVG • Auto-compressed</p>
+      <p className="text-xs text-gray-600 mt-2">{value.filter(Boolean).length}/{max} images • JPG, PNG, WebP, GIF • Auto-compressed</p>
     </div>
   );
 }

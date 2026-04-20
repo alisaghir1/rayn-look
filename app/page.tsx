@@ -16,6 +16,12 @@ export const metadata: Metadata = {
   description:
     'Discover luxury contact lenses crafted for comfort and style. Rayn Look offers premium colored lenses in monthly and yearly options with free shipping.',
   alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Rayn Look — Premium Contact Lenses',
+    description: 'Discover luxury contact lenses crafted for comfort and style. Premium colored lenses with free shipping.',
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Rayn Look Premium Contact Lenses' }],
+    type: 'website',
+  },
 };
 
 export default async function HomePage() {

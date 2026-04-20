@@ -18,6 +18,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [categories, setCategories] = useState<{ id: string; name: string; type: string }[]>([]);
 
   const [formData, setFormData] = useState({
@@ -102,6 +103,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
       const res = await fetch(`/api/products/${id}`, {
@@ -115,9 +117,13 @@ export default function EditProductPage({ params }: EditProductPageProps) {
 
       if (res.ok) {
         router.push('/admin/products');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to update product (${res.status})`);
       }
-    } catch (error) {
-      console.error('Update product error:', error);
+    } catch (err) {
+      console.error('Update product error:', err);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -138,6 +144,12 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+            {error}
+          </div>
+        )}
+
         {/* Product Type */}
         <div className="bg-admin-card rounded-xl p-6 border border-white/5 space-y-4">
           <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Product Type</h2>

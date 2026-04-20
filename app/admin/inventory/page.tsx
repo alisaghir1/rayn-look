@@ -23,6 +23,7 @@ export default function AdminInventoryPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editQty, setEditQty] = useState('');
   const [editReason, setEditReason] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetch('/api/inventory')
@@ -48,9 +49,10 @@ export default function AdminInventoryPage() {
   const handleQuickUpdate = async (productId: string) => {
     const newQty = parseInt(editQty);
     if (isNaN(newQty) || newQty < 0) return;
+    setError('');
 
     try {
-      await fetch('/api/inventory', {
+      const res = await fetch('/api/inventory', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -59,6 +61,12 @@ export default function AdminInventoryPage() {
           reason: editReason || 'Manual adjustment',
         }),
       });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to update stock (${res.status})`);
+        return;
+      }
 
       setInventory(
         inventory.map((item) =>
@@ -70,6 +78,7 @@ export default function AdminInventoryPage() {
       setEditReason('');
     } catch (e) {
       console.error('Stock update failed:', e);
+      setError('Network error. Please check your connection and try again.');
     }
   };
 
@@ -133,6 +142,12 @@ export default function AdminInventoryPage() {
           Low Stock Only
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Inventory Table */}
       <div className="bg-admin-card rounded-xl border border-white/5 overflow-hidden">

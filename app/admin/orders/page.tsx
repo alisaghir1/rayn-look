@@ -46,6 +46,7 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetch('/api/orders?limit=100')
@@ -68,15 +69,22 @@ export default function AdminOrdersPage() {
   });
 
   const updateStatus = async (orderId: string, newStatus: string) => {
+    setError('');
     try {
-      await fetch(`/api/orders/${orderId}`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderStatus: newStatus }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to update order status (${res.status})`);
+        return;
+      }
       setOrders(orders.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o)));
     } catch (e) {
       console.error('Status update failed:', e);
+      setError('Network error. Please check your connection and try again.');
     }
   };
 
@@ -123,6 +131,12 @@ export default function AdminOrdersPage() {
           <option value="CANCELLED">Cancelled</option>
         </select>
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Orders Table */}
       <div className="bg-admin-card rounded-xl border border-white/5 overflow-hidden">

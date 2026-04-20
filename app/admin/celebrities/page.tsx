@@ -34,6 +34,7 @@ export default function AdminCelebritiesPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(emptyCeleb);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const fetchCelebrities = async () => {
     try {
@@ -61,19 +62,20 @@ export default function AdminCelebritiesPage() {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
+    setError('');
     try {
-      if (editing) {
-        await fetch(`/api/celebrities/${editing.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        });
-      } else {
-        await fetch('/api/celebrities', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(form),
-        });
+      const url = editing ? `/api/celebrities/${editing.id}` : '/api/celebrities';
+      const method = editing ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to save celebrity (${res.status})`);
+        setSaving(false);
+        return;
       }
       await fetchCelebrities();
       setEditing(null);
@@ -81,6 +83,7 @@ export default function AdminCelebritiesPage() {
       setForm(emptyCeleb);
     } catch (e) {
       console.error('Save failed:', e);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setSaving(false);
     }
@@ -89,10 +92,16 @@ export default function AdminCelebritiesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this celebrity?')) return;
     try {
-      await fetch(`/api/celebrities/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/celebrities/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Failed to delete celebrity (${res.status})`);
+        return;
+      }
       setCelebrities(celebrities.filter((c) => c.id !== id));
     } catch (e) {
       console.error('Delete failed:', e);
+      setError('Network error. Please try again.');
     }
   };
 
@@ -140,6 +149,12 @@ export default function AdminCelebritiesPage() {
           </button>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (

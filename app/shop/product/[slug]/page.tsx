@@ -4,57 +4,48 @@ import StorefrontLayout from '@/components/layout/StorefrontLayout';
 import ProductDetail from './ProductDetail';
 import TrustBadges from '@/components/ui/TrustBadges';
 import Link from 'next/link';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
-// Mock product data — will be replaced with DB query
-const getMockProduct = (slug: string) => {
-  const products: Record<string, {
-    id: string; name: string; slug: string; description: string; price: number;
-    compareAtPrice: number | null; images: string[]; color: string; duration: string;
-    sku: string; stockQuantity: number; category: { name: string; slug: string };
-  }> = {
-    'amber-glow': {
-      id: '1', name: 'Amber Glow', slug: 'amber-glow',
-      description: 'Experience the warmth of golden-brown hues with our Amber Glow lenses. These premium monthly lenses combine cutting-edge comfort technology with a stunning, natural-looking brown color that enhances your eyes with a warm, luminous glow. FDA-approved and UV-protected.',
-      price: 29.99, compareAtPrice: 39.99, images: [],
-      color: 'Brown', duration: 'Monthly', sku: 'RL-AG-001', stockQuantity: 50,
-      category: { name: 'Brown Lenses', slug: 'brown-lenses' },
-    },
-    'silver-mist': {
-      id: '2', name: 'Silver Mist', slug: 'silver-mist',
-      description: 'Transform your look with our Silver Mist lenses. These sophisticated gray lenses offer a cool, mysterious appearance while maintaining a natural look. Perfect for creating a striking, elegant statement.',
-      price: 34.99, compareAtPrice: null, images: [],
-      color: 'Gray', duration: 'Monthly', sku: 'RL-SM-001', stockQuantity: 35,
-      category: { name: 'Gray Lenses', slug: 'gray-lenses' },
-    },
-  };
-  return products[slug] || null;
-};
+async function getProduct(slug: string) {
+  const { data: product, error } = await supabaseAdmin
+    .from('Product')
+    .select('*, category:Category(*)')
+    .eq('slug', slug)
+    .eq('active', true)
+    .single();
+
+  if (error || !product) return null;
+  return product;
+}
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = getMockProduct(slug);
+  const product = await getProduct(slug);
   if (!product) return {};
 
+  const categoryName = product.category?.name || 'Products';
   return {
-    title: `${product.name} — ${product.category.name}`,
-    description: product.description.slice(0, 160),
+    title: `${product.name} — ${categoryName}`,
+    description: product.description?.slice(0, 160),
     alternates: { canonical: `/shop/product/${slug}` },
     openGraph: {
       title: `${product.name} — Rayn Look`,
-      description: product.description.slice(0, 160),
-      images: product.images[0] ? [{ url: product.images[0] }] : [{ url: '/og-image.jpg' }],
+      description: product.description?.slice(0, 160),
+      images: product.images?.[0] ? [{ url: product.images[0] }] : [{ url: '/og-image.jpg' }],
     },
   };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = getMockProduct(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
+
+  const category = product.category || { name: 'Products', slug: 'all' };
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -92,7 +83,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <span>/</span>
             <Link href="/shop" className="hover:text-gold transition-colors">Shop</Link>
             <span>/</span>
-            <Link href={`/shop/${product.category.slug}`} className="hover:text-gold transition-colors">{product.category.name}</Link>
+            <Link href={`/shop/${category.slug}`} className="hover:text-gold transition-colors">{category.name}</Link>
             <span>/</span>
             <span className="text-dark font-medium">{product.name}</span>
           </nav>
@@ -100,7 +91,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </section>
 
       {/* Product Detail */}
-      <ProductDetail product={product} />
+      <ProductDetail product={{ ...product, category }} />
 
       {/* Trust Badges */}
       <section className="py-12 border-t border-gray-100">

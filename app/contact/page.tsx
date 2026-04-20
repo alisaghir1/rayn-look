@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   description:
     'Get in touch with Rayn Look. We\'re here to help with orders, product questions, and more.',
   alternates: { canonical: '/contact' },
+  openGraph: {
+    title: 'Contact Rayn Look',
+    description: 'Get in touch with Rayn Look. We\'re here to help with orders, product questions, and more.',
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Contact Rayn Look' }],
+  },
 };
 
 export default function ContactPage() {

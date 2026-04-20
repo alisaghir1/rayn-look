@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
-import { Minus, Plus, ShoppingBag, Heart } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Heart, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 
@@ -30,11 +30,28 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedDegree, setSelectedDegree] = useState('');
+  const [zoomed, setZoomed] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   const { addItem, openCart } = useCartStore();
 
   const discount = product.compareAtPrice
     ? calculateDiscount(product.price, product.compareAtPrice)
     : 0;
+
+  const images = product.images?.length > 0 ? product.images : [];
+  const hasMultipleImages = images.length > 1;
+
+  const goToPrev = () => setSelectedImage((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  const goToNext = () => setSelectedImage((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imageContainerRef.current) return;
+    const rect = imageContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPos({ x, y });
+  };
 
   const handleAddToCart = () => {
     if (product.stockQuantity === 0) return;
@@ -66,13 +83,24 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Image Gallery */}
           <div className="space-y-4 animate-fade-in">
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-light shimmer-overlay">
-              {product.images[selectedImage] ? (
+            {/* Main Image */}
+            <div
+              ref={imageContainerRef}
+              className="relative aspect-square rounded-2xl overflow-hidden bg-gray-light shimmer-overlay cursor-zoom-in group/zoom"
+              onMouseEnter={() => setZoomed(true)}
+              onMouseLeave={() => setZoomed(false)}
+              onMouseMove={handleMouseMove}
+            >
+              {images[selectedImage] ? (
                 <Image
-                  src={product.images[selectedImage]}
-                  alt={product.name}
+                  src={images[selectedImage]}
+                  alt={`${product.name} - Image ${selectedImage + 1}`}
                   fill
                   className="object-cover transition-all duration-500"
+                  style={zoomed ? {
+                    transform: 'scale(2)',
+                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                  } : undefined}
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
                 />
@@ -82,22 +110,61 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               )}
               {discount > 0 && (
-                <span className="absolute top-4 left-4 bg-gold text-white text-sm font-medium px-3 py-1 rounded animate-bounce-in">
+                <span className="absolute top-4 left-4 bg-gold text-white text-sm font-medium px-3 py-1 rounded animate-bounce-in z-10">
                   -{discount}% OFF
                 </span>
               )}
+
+              {/* Zoom hint */}
+              {images[selectedImage] && !zoomed && (
+                <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 opacity-0 group-hover/zoom:opacity-100 transition-opacity z-10">
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  Hover to zoom
+                </div>
+              )}
+
+              {/* Navigation Arrows */}
+              {hasMultipleImages && (
+                <>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white transition-all opacity-0 group-hover/zoom:opacity-100 z-10"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-dark" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); goToNext(); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-white transition-all opacity-0 group-hover/zoom:opacity-100 z-10"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="w-5 h-5 text-dark" />
+                  </button>
+                </>
+              )}
+
+              {/* Image counter */}
+              {hasMultipleImages && (
+                <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full z-10">
+                  {selectedImage + 1} / {images.length}
+                </div>
+              )}
             </div>
-            {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-3">
-                {product.images.map((img, i) => (
+
+            {/* Thumbnail Strip */}
+            {hasMultipleImages && (
+              <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+                {images.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedImage(i)}
-                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === i ? 'border-gold' : 'border-transparent'
+                    className={`relative w-20 h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                      selectedImage === i
+                        ? 'border-gold ring-2 ring-gold/20 scale-105'
+                        : 'border-gray-200 hover:border-gold/50 opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <Image src={img} alt={`${product.name} ${i + 1}`} fill className="object-cover" sizes="100px" />
+                    <Image src={img} alt={`${product.name} ${i + 1}`} fill className="object-cover" sizes="80px" />
                   </button>
                 ))}
               </div>
