@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('admin_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax', // 'lax' is mobile-friendly (iOS Safari) and still safe for admin POSTs from same-origin forms
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
@@ -93,7 +93,7 @@ export async function DELETE() {
   response.cookies.set('admin_session', '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: 0,
   });

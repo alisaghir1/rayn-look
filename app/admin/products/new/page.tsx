@@ -82,6 +82,7 @@ export default function NewProductPage() {
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ensure admin_session cookie is sent (mobile safety)
         body: JSON.stringify({
           ...formData,
           images: formData.images.filter(Boolean),
@@ -90,10 +91,27 @@ export default function NewProductPage() {
 
       if (res.ok) {
         router.push('/admin/products');
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || `Failed to create product (${res.status})`);
+        return;
       }
+
+      // Surface the real error so mobile users can see what's wrong
+      const text = await res.text();
+      let parsedError = '';
+      try {
+        parsedError = JSON.parse(text)?.error || '';
+      } catch {
+        parsedError = text?.slice(0, 200) || '';
+      }
+
+      if (res.status === 401) {
+        setError('Session expired. Please log in again.');
+        setTimeout(() => router.push('/admin/login'), 1500);
+      } else if (res.status === 400) {
+        setError(parsedError || 'Please fill in all required fields.');
+      } else {
+        setError(parsedError || `Failed to create product (${res.status})`);
+      }
+      console.error('Create product failed:', res.status, text);
     } catch (err) {
       console.error('Create product error:', err);
       setError('Network error. Please check your connection and try again.');

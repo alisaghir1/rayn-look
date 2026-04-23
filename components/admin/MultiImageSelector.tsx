@@ -29,6 +29,13 @@ export default function MultiImageSelector({
     setUploading(true);
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    // iPhones can deliver HEIC files; surface a clear message instead of a silent fail.
+    const isHeic = /heic|heif/i.test(file.type) || /\.heic$|\.heif$/i.test(file.name);
+    if (isHeic) {
+      setError('HEIC images aren\u2019t supported. In iPhone Settings \u2192 Camera \u2192 Formats, choose "Most Compatible", or convert to JPG.');
+      setUploading(false);
+      return;
+    }
     if (!allowedTypes.includes(file.type)) {
       setError('Invalid file. Use JPG, PNG, WebP, or GIF.');
       setUploading(false);
@@ -39,12 +46,13 @@ export default function MultiImageSelector({
     let processedFile = file;
     try {
       processedFile = await compressImage(file, { maxDimension: 2400, quality: 0.82 });
-    } catch {
+    } catch (err) {
+      console.error('Image compression failed:', err);
       // If compression fails, continue with original file
     }
 
     if (processedFile.size > 5 * 1024 * 1024) {
-      setError('File still too large after compression. Try a smaller image.');
+      setError(`Image is ${(processedFile.size / 1024 / 1024).toFixed(1)}MB after compression (max 5MB). Try a smaller photo.`);
       setUploading(false);
       return;
     }
@@ -56,20 +64,35 @@ export default function MultiImageSelector({
 
       const res = await fetch('/api/upload', {
         method: 'POST',
+        credentials: 'include', // ensure admin_session cookie is sent on mobile
         body: formData,
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: { url?: string; error?: string } = {};
+      try { data = JSON.parse(text); } catch { /* not JSON */ }
 
       if (!res.ok) {
-        setError(data.error || 'Upload failed');
+        console.error('Upload failed:', res.status, text);
+        if (res.status === 401) {
+          setError('Session expired. Please log in again.');
+        } else {
+          setError(data.error || `Upload failed (${res.status})`);
+        }
+        setUploading(false);
+        return;
+      }
+
+      if (!data.url) {
+        setError('Upload succeeded but no URL returned.');
         setUploading(false);
         return;
       }
 
       onChange([...value.filter(Boolean), data.url]);
-    } catch {
-      setError('Upload failed. Please try again.');
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError('Network error while uploading. Please try again.');
     }
     setUploading(false);
   }, [folder, onChange, value]);

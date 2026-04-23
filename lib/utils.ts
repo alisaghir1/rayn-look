@@ -76,6 +76,8 @@ export async function compressImage(
     return file;
   }
 
+  const MAX_BYTES = 5 * 1024 * 1024; // server hard cap
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -108,33 +110,31 @@ export async function compressImage(
 
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Try WebP first, fallback to JPEG
-      const outputType = 'image/webp';
-      canvas.toBlob(
-        (blob) => {
-          if (!blob || blob.size >= file.size) {
-            // Compression didn't help, try JPEG
-            canvas.toBlob(
-              (jpegBlob) => {
-                if (!jpegBlob || jpegBlob.size >= file.size) {
-                  resolve(file); // original is already smaller
-                  return;
-                }
-                const ext = 'jpg';
-                const name = file.name.replace(/\.[^.]+$/, `.${ext}`);
-                resolve(new File([jpegBlob], name, { type: 'image/jpeg' }));
-              },
-              'image/jpeg',
-              quality
-            );
-            return;
+      // Iteratively reduce quality until the file is under the server cap.
+      // This is important on mobile where camera photos can be 8-15 MB.
+      const tryEncode = (type: 'image/webp' | 'image/jpeg', q: number): Promise<Blob | null> =>
+        new Promise((res) => canvas.toBlob((b) => res(b), type, q));
+
+      (async () => {
+        const ext = (type: string) => (type === 'image/webp' ? 'webp' : 'jpg');
+
+        // Try WebP first, then JPEG, stepping quality down if needed
+        for (const type of ['image/webp', 'image/jpeg'] as const) {
+          let q = quality;
+          for (let i = 0; i < 5; i++) {
+            const blob = await tryEncode(type, q);
+            if (blob && blob.size <= MAX_BYTES && blob.size < file.size) {
+              const name = file.name.replace(/\.[^.]+$/, `.${ext(type)}`);
+              resolve(new File([blob], name, { type }));
+              return;
+            }
+            q = Math.max(0.4, q - 0.15);
           }
-          const name = file.name.replace(/\.[^.]+$/, '.webp');
-          resolve(new File([blob], name, { type: outputType }));
-        },
-        outputType,
-        quality
-      );
+        }
+
+        // Last resort: return original (upstream will show a size error)
+        resolve(file);
+      })();
     };
 
     img.onerror = () => {
